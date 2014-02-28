@@ -21,7 +21,7 @@
    THE SOFTWARE.
  */
 
-#include <string.h>
+#include <stddef.h>
 #include "aw-parse.h"
 
 enum parse_token parse_symbol(union parse_value *pv, char *str, char **end) {
