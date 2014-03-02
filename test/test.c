@@ -24,6 +24,9 @@ int main(int argc, char* argv[]) {
 	union parse_value pv;
 	enum parse_token pt;
 
+	(void) argc;
+	(void) argv;
+
 	pt = parse_token(&pv, str, &str);
 	assert(pt == PARSE_BRACE);
 
