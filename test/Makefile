@@ -2,10 +2,10 @@
 export CFLAGS += -Wall -Wextra
 
 test: test.o ../libaw-parse.a
-	clang -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^
 
 %.o: %.c
-	clang $(CFLAGS) -I.. -c $< -o $@
+	$(CC) $(CFLAGS) -I.. -c $< -o $@
 
 ../libaw-parse.a:
 	$(MAKE) -C..
