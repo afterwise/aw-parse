@@ -263,7 +263,7 @@ void parse_skip_token(enum parse_token pt, char *str, char **end) {
 	union parse_value pv;
 	int depth;
 
-	if (pt == PARSE_BRACE || pt == PARSE_BRACKET)
+	if (pt == PARSE_BRACE || pt == PARSE_BRACKET || pt == PARSE_PAREN)
 		for (depth = 0;;) {
 			switch (parse_token(&pv, str, end)) {
 			case PARSE_BRACE:
