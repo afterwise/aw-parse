@@ -36,6 +36,8 @@ enum parse_token {
 	PARSE_BRACKET,
 	PARSE_PAREN,
 
+	PARSE_COMMA,
+
 	PARSE_LET,
 	PARSE_SYM,
 	PARSE_STR,
@@ -52,7 +54,7 @@ union parse_value {
 
 enum parse_token parse_symbol(union parse_value *pv, char *str, char **end);
 enum parse_token parse_string(union parse_value *pv, char *str, char **end);
-enum parse_token parse_number(union parse_value *pv, char *str, char **end);
+enum parse_token parse_number(union parse_value *pv, char **end);
 enum parse_token parse_token(union parse_value *pv, char *str, char **end);
 
 void parse_skip_token(enum parse_token pt, char *str, char **end);

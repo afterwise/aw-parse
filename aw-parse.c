@@ -21,21 +21,18 @@
    THE SOFTWARE.
  */
 
-#include <stddef.h>
 #include "aw-parse.h"
+#include <stddef.h>
 
 enum parse_token parse_symbol(union parse_value *pv, char *str, char **end) {
-	char *it = str;
+	char *it = *end;
+	pv->s = str;
 
 	for (;;)
 		switch (*it) {
 		case ':':
-			*it = 0;
-
-			if (end != NULL)
-				*end = it + 2;
-
-			pv->s = str;
+			*str = 0;
+			*end = it + 1;
 			return PARSE_LET;
 
 		case ' ':
@@ -43,41 +40,40 @@ enum parse_token parse_symbol(union parse_value *pv, char *str, char **end) {
 		case '\f':
 		case '\r':
 		case '\n':
-			*it = 0;
-
-			if (end != NULL)
-				*end = it + 1;
-
-			pv->s = str;
+			*str = 0;
+			*end = it + 1;
 			return PARSE_SYM;
 
+		case '}':
+		case ']':
+		case ')':
+		case ',':
 		case '\0':
-			if (end != NULL)
-				*end = it;
-
-			pv->s = str;
+			*str = 0;
+			*end = it;
 			return PARSE_SYM;
 
 		default:
-			it++;
+			*str++ = *it++;
 		}
 }
 
 enum parse_token parse_string(union parse_value *pv, char *str, char **end) {
-	char *it = str, *jt;
+	char *it = *end, *jt = str;
+	pv->s = str;
 
 	if (*it++ != '"')
 		return PARSE_STOP;
 
-	for (jt = it;;)
+	for (;;)
 		switch (*it) {
 		case '"':
 			*jt = 0;
-
-			if (end != NULL)
-				*end = it + 1;
-
-			pv->s = str + 1;
+			if (it[1] == ':') {
+				*end = it + 2;
+				return PARSE_LET;
+			}
+			*end = it + 1;
 			return PARSE_STR;
 
 		case '\\':
@@ -133,8 +129,8 @@ enum parse_token parse_string(union parse_value *pv, char *str, char **end) {
 		}
 }
 
-enum parse_token parse_number(union parse_value *pv, char *str, char **end) {
-	char *it = str;
+enum parse_token parse_number(union parse_value *pv, char **end) {
+	char *it = *end;
 	char *jt = it;
 	enum parse_token pt = PARSE_INT;
 	int i, sgn = 1, iv = 0;
@@ -169,7 +165,7 @@ enum parse_token parse_number(union parse_value *pv, char *str, char **end) {
 			/* fall through */
 
 		case '+':
-			if (it == str) {
+			if (it == *end) {
 				it++;
 				break;
 			}
@@ -191,15 +187,13 @@ enum parse_token parse_number(union parse_value *pv, char *str, char **end) {
 			} else
 				pv->i = sgn >= 0 ? iv : -iv;
 
-			if (end != NULL)
-				*end = it;
-
+			*end = it;
 			return pt;
 		}
 }
 
 enum parse_token parse_token(union parse_value *pv, char *str, char **end) {
-	char *it = str;
+	char *it = *end;
 
 	for (;;)
 		switch (*it) {
@@ -221,8 +215,13 @@ enum parse_token parse_token(union parse_value *pv, char *str, char **end) {
 			*end = it + 1;
 			return PARSE_POP;
 
+		case ',':
+			*end = it + 1;
+			return PARSE_COMMA;
+
 		case '"':
-			return parse_string(pv, it, end);
+			*end = it;
+			return parse_string(pv, str, end);
 
 		case '0':
 		case '1':
@@ -234,7 +233,8 @@ enum parse_token parse_token(union parse_value *pv, char *str, char **end) {
 		case '7':
 		case '8':
 		case '9':
-			return parse_number(pv, it, end);
+			*end = it;
+			return parse_number(pv, end);
 
 		case ' ':
 		case '\t':
@@ -249,13 +249,17 @@ enum parse_token parse_token(union parse_value *pv, char *str, char **end) {
 
 		case '-':
 		case '+':
-			if ((unsigned) (it[1] - '0') <= 9)
-				return parse_number(pv, it, end);
+
+			if ((unsigned) (it[1] - '0') <= 9) {
+				*end = it;
+				return parse_number(pv, end);
+			}
 
 			/* fall through */
 
 		default:
-			return parse_symbol(pv, it, end);
+			*end = it;
+			return parse_symbol(pv, str, end);
 		}
 }
 
@@ -264,7 +268,7 @@ void parse_skip_token(enum parse_token pt, char *str, char **end) {
 	int depth;
 
 	if (pt == PARSE_BRACE || pt == PARSE_BRACKET || pt == PARSE_PAREN)
-		for (depth = 0;;) {
+		for (depth = 0;;)
 			switch (parse_token(&pv, str, end)) {
 			case PARSE_BRACE:
 			case PARSE_BRACKET:
@@ -272,6 +276,7 @@ void parse_skip_token(enum parse_token pt, char *str, char **end) {
 				depth++;
 				break;
 
+			case PARSE_COMMA:
 			case PARSE_LET:
 			case PARSE_SYM:
 			case PARSE_STR:
@@ -288,9 +293,6 @@ void parse_skip_token(enum parse_token pt, char *str, char **end) {
 			case PARSE_STOP:
 				return;
 			}
-
-			str = *end;
-		}
 }
 
 unsigned parse_skip_to_end(enum parse_token pt, char *str, char **end) {
@@ -298,13 +300,10 @@ unsigned parse_skip_to_end(enum parse_token pt, char *str, char **end) {
 	unsigned count = 0;
 
 	if (pt > PARSE_POP)
-		while ((pt = parse_token(&pv, str, &str)) > PARSE_POP) {
-			parse_skip_token(pt, str, &str);
+		while ((pt = parse_token(&pv, str, end)) > PARSE_POP) {
+			parse_skip_token(pt, str, end);
 			++count;
 		}
-
-	if (end != NULL)
-		*end = str;
 
 	return count;
 }
