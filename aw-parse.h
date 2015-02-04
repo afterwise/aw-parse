@@ -48,8 +48,8 @@ enum parse_token {
 
 union parse_value {
 	char *s;
-	int i;
-	float f;
+	long long i;
+	double f;
 };
 
 enum parse_token parse_symbol(union parse_value *pv, char *str, char **end);

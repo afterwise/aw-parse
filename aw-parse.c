@@ -133,9 +133,8 @@ enum parse_token parse_number(union parse_value *pv, char **end) {
 	char *it = *end;
 	char *jt = it;
 	enum parse_token pt = PARSE_INT;
-	int i, sgn = 1, iv = 0;
-	float fv = 0.f;
-	long x;
+	long long i, x, sgn = 1, iv = 0;
+	double fv = 0.f;
 
 	for (;;)
 		switch (*it) {
@@ -154,7 +153,7 @@ enum parse_token parse_number(union parse_value *pv, char **end) {
 
 		case '.':
 			jt = ++it;
-			fv = iv;
+			fv = (double) iv;
 			iv = 0;
 			pt = PARSE_FLOAT;
 			break;
@@ -180,7 +179,7 @@ enum parse_token parse_number(union parse_value *pv, char **end) {
 					for (i = 0; i < it - jt; ++i)
 						x *= 10;
 
-					fv += (float) iv / (float) x;
+					fv += (double) iv / (double) x;
 				}
 
 				pv->f = sgn >= 0 ? fv : -fv;

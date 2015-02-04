@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
 		} else if (strcmp(pv.s, "age") == 0) {
 			pt = parse_token(&pv, text, &str);
 			assert(pt == PARSE_INT);
-			printf("Age <%d>\n", pv.i);
+			printf("Age <%lld>\n", pv.i);
 		} else if (strcmp(pv.s, "understated popularity") == 0) {
 			pt = parse_token(&pv, text, &str);
 			assert(pt == PARSE_FLOAT);
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
 						} else if (strcmp(pv.s, "age") == 0) {
 							pt = parse_token(&pv, text, &str);
 							assert(pt == PARSE_INT);
-							printf("Child-Age <%d>\n", pv.i);
+							printf("Child-Age <%lld>\n", pv.i);
 						} else {
 							printf("Unexpected child attribute: %s\n", pv.s);
 							return 1;
