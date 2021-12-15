@@ -24,14 +24,19 @@
 #ifndef AW_PARSE_H
 #define AW_PARSE_H
 
-#if _MSC_VER && defined _parse_export
-# define _parse_extern extern __declspec(dllextern)
-#elif _MSC_VER && defined _parse_import
-# define _parse_extern extern __declspec(dllimport)
-#elif defined _parse_export
-# define _parse_extern __attribute__((visibility("default"))) extern
-#else
-# define _parse_extern extern
+#if defined(_parse_dllexport)
+# if _MSC_VER
+#  define _parse_api extern __declspec(dllexport)
+# elif __GNUC__
+#  define _parse_api __attribute__((visibility("default"))) extern
+# endif
+#elif defined(_parse_dllimport)
+# if _MSC_VER
+#  define _parse_api extern __declspec(dllimport)
+# endif
+#endif
+#ifndef _parse_api
+# define _parse_api extern
 #endif
 
 #ifdef __cplusplus
@@ -62,13 +67,13 @@ union parse_value {
 	double f;
 };
 
-_parse_extern enum parse_token parse_symbol(union parse_value *pv, char *str, char **end);
-_parse_extern enum parse_token parse_string(union parse_value *pv, char *str, char **end);
-_parse_extern enum parse_token parse_number(union parse_value *pv, char **end);
-_parse_extern enum parse_token parse_token(union parse_value *pv, char *str, char **end);
+_parse_api enum parse_token parse_symbol(union parse_value *pv, char *str, char **end);
+_parse_api enum parse_token parse_string(union parse_value *pv, char *str, char **end);
+_parse_api enum parse_token parse_number(union parse_value *pv, char **end);
+_parse_api enum parse_token parse_token(union parse_value *pv, char *str, char **end);
 
-_parse_extern void parse_skip_token(enum parse_token pt, char *str, char **end);
-_parse_extern unsigned parse_skip_to_end(enum parse_token pt, char *str, char **end);
+_parse_api void parse_skip_token(enum parse_token pt, char *str, char **end);
+_parse_api unsigned parse_skip_to_end(enum parse_token pt, char *str, char **end);
 
 #ifdef __cplusplus
 } /* extern "C" */
